@@ -38,10 +38,10 @@ const decrypt = (text) => {
 client.on('listening', _ => {
   const addr = client.address();
   console.log('UDP Client listing on ' + addr.address + ':' + addr.port);
-  // client.setBroadcast(true);
-  client.setMulticastTTL(128);
+  // // client.setBroadcast(true);
+  // client.setMulticastTTL(128);
   
-  client.addMembership(mCastIp);
+  // client.addMembership(mCastIp);
 
   const r1 = readline.createInterface({
     input: process.stdin,
@@ -72,8 +72,12 @@ client.on('listening', _ => {
 });
 
 client.on('message', (message, remote) => {
-  if (remote.address !== '192.168.0.104' || remote.address !== '127.0.0.1')
+  if (remote.address !== '192.168.0.104' && remote.address !== '127.0.0.1')
     console.log(`\n${remote.address}> - ${decrypt(message.toString('hex'))}`);
 });
 
-client.bind(config.PORT);
+client.bind(config.PORT, () => {
+  // client.setBroadcast(true);
+  client.setMulticastTTL(128);
+  client.addMembership(mCastIp, '192.168.0.104');
+});
