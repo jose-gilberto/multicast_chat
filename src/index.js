@@ -4,7 +4,7 @@ const readline = require('readline');
 const crypto = require('crypto');
 
 const algorithm = 'aes-256-cbc';
-const mCastIp = '230.185.192.108';
+const mCastIp = '224.0.255.255';
 const client = dgram.createSocket('udp4');
 
 const key = config.KEY;
@@ -38,17 +38,17 @@ const decrypt = (text) => {
 client.on('listening', _ => {
   const addr = client.address();
   console.log('UDP Client listing on ' + addr.address + ':' + addr.port);
-  client.setBroadcast(true);
+  // client.setBroadcast(true);
   client.setMulticastTTL(128);
   
-  client.addMembership(mCastIp, '127.0.0.1');
+  client.addMembership(mCastIp);
 
   const r1 = readline.createInterface({
     input: process.stdin,
     output: process.stdout
   });
 
-  r1.setPrompt('local> ');
+  r1.setPrompt('Digite sua mensagem (.exit para sair): \n');
   r1.prompt();
 
   r1.on('line', line => {
@@ -58,16 +58,13 @@ client.on('listening', _ => {
 
       let msg = encrypt(line);
       
-      console.log(msg);
       // port 4696
       // port config.PORT
       msg = Buffer.from(msg, 'hex');
-      client.send(msg, 0, msg.length, config.PORT, mCastIp);
-
-      // client.send(msg, 4696, mCastIp);
-      console.log(decrypt(msg));
-      
-      r1.prompt();
+      client.send(msg, 0, msg.length, config.PORT, mCastIp, err => {
+        if (err) console.error(err);
+        console.log('Message sended!');
+      });
     }
   }).on('close', _ => {
     process.exit(0);
@@ -75,7 +72,8 @@ client.on('listening', _ => {
 });
 
 client.on('message', (message, remote) => {
-  console.log(`${remote.address}> - ${message}`);
+  if (remote.address !== '192.168.0.104' || remote.address !== '127.0.0.1')
+    console.log(`\n${remote.address}> - ${decrypt(message.toString('hex'))}`);
 });
 
-client.bind(config.PORT, config.HOST);
+client.bind(config.PORT);
